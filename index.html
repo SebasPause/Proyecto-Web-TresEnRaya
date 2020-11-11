@@ -1,0 +1,237 @@
+<html>
+    <head>
+        <!-- The core Firebase JS SDK is always required and must be listed first -->
+        <script src="https://www.gstatic.com/firebasejs/7.14.3/firebase-app.js"></script>
+        <script src="https://www.gstatic.com/firebasejs/7.14.3/firebase.js"></script>
+
+        <!-- TODO: Add SDKs for Firebase products that you want to use
+             https://firebase.google.com/docs/web/setup#available-libraries -->
+
+        <script>
+          // Your web app's Firebase configuration
+          var firebaseConfig = {
+            apiKey: "AIzaSyAIDvFDKFPUqsnnGlKnSy_c4-UdQ7oZ1-Y",
+            authDomain: "tresenraya-sebas.firebaseapp.com",
+            databaseURL: "https://tresenraya-sebas.firebaseio.com",
+            projectId: "tresenraya-sebas",
+            storageBucket: "tresenraya-sebas.appspot.com",
+            messagingSenderId: "554311995076",
+            appId: "1:554311995076:web:062fd9991994f389d60391"
+          };
+          // Initialize Firebase
+          firebase.initializeApp(firebaseConfig);
+        </script>
+
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <link href="estilos.css" rel="stylesheet" type="text/css">  
+    </head>
+    <body>
+        <h1>Bienvenido al tres en raya</h1><br>
+        Introduce tu nombre
+        <input type="text" id="nombre" value="">
+
+        <div id="area_jugador">
+            
+        </div>
+        <br>
+        <div id="area_juego">
+            <div id="c1" onclick="changeText(this)">
+                
+            </div>
+            <div id="c2" onclick="changeText(this)">
+                
+            </div>
+            <div id="c3" onclick="changeText(this)">
+                
+            </div>
+            <div id="c4" onclick="changeText(this)">
+                
+            </div>
+            <div id="c5" onclick="changeText(this)">
+                
+            </div>
+            <div id="c6" onclick="changeText(this)">
+                
+            </div>
+            <div id="c7" onclick="changeText(this)">
+                
+            </div>
+            <div id="c8" onclick="changeText(this)">
+                
+            </div>
+            <div id="c9" onclick="changeText(this)">
+                
+            </div>
+        </div>
+        <br><br>
+        <input type="button" id="boton" value="Entrar a jugar" onclick="enviar()"><br><br>
+        <input type="button" id="boton2" value="Salir" onclick="salir()">
+        <script>
+            var db = firebase.database();
+            function enviar(){
+                var t = document.getElementById("nombre").value;
+                console.log(t);
+                db.ref('jugadores').push({
+                   jugador: t 
+                });
+            }
+            
+            function salir(){
+                db.ref('jugadores').remove();
+                db.ref('Jugadas').remove();
+                alert("Partida reinicida, Vuelve a introducir tu nombre");
+                location.reload();
+            }
+            
+            var i = 0;
+            db.ref('jugadores').on('child_added', function(data){
+                    var div = document.getElementById("area_jugador");
+                    document.getElementById("area_jugador").value = ++i;
+                    if(i<=2){
+                        div.innerHTML +="<br>"+"Jugador "+i+": "+data.val().jugador;
+                    }else {
+                        alert("Solo pueden jugar dos personas a la vez");
+                    }
+            });
+            
+            var turno=1;
+            var nr = 1;
+            var texto1 = "X";
+            var texto2 = "O";
+            var nrjugadas = 0;
+            var miturno = 0;
+            function changeText(x){
+                if(nr>9){
+                    alert("Has llegado al numero maximo de jugadas,ha sido un empate"); 
+                }else{
+                    if (!x.disabled){
+                        if (turno ===1 && miturno===0){
+                            miturno=1;
+                        }
+                        if (turno===2&&miturno===0){
+                            miturno=2;
+                        }       
+                        if (turno===1 && miturno===1){
+                            var divid = x.id;
+                            var data = {
+                                opcion: texto1,
+                                divid: divid,
+                                turnojugador: 2
+                            };
+                            db.ref('Jugadas').child("jugada"+nr).set(data);
+                            x.innerHTML = "X";
+                            x.disabled = true;
+                            return turno=2,nr;
+                            
+                        }else if(turno===2 && miturno===2){
+                            var divid = x.id;
+                            var data = {
+                                opcion: texto2,
+                                divid: divid,
+                                turnojugador: 1
+                            };
+                            db.ref('Jugadas').child("jugada"+nr).set(data);
+                            x.innerHTML = "O";
+                            x.disabled = true;
+                            
+                            return turno=1,nr;
+                        }else{
+                            alert("No es tu turno");
+                        }
+                    }else {
+                        alert("Selecciona otra casilla");
+                    }
+                }
+            }
+            const ganadoras = [
+                    //las jugadas ganadoras en vertical
+                    [ ["c1"], ["c4"], ["c7"] ],
+                    [ ["c2"], ["c5"], ["c8"] ],
+                    [ ["c3"], ["c6"], ["c9"] ],
+                    //las jugadas ganadoras en horizontal
+                    [ ["c1"], ["c2"], ["c3"] ],
+                    [ ["c4"], ["c5"], ["c6"] ],
+                    [ ["c7"], ["c8"], ["c9"] ],
+                    //las jugadas ganadoras en diagonal
+                    [ ["c1"], ["c5"], ["c9"] ],
+                    [ ["c3"], ["c5"], ["c7"] ]
+                ]
+                
+                
+                
+            function comprobarGanador(jugadas){
+                //recorro las opciones ganadoras,en este caso 8
+                 for (let i = 0; i < ganadoras.length; i++){
+                          //seleccionamos una opcion
+                          var oGanadora = ganadoras[i];
+                          //comprobamos si la jugada contiene el primer objeto del array ganador
+                          //lo mismo con los demas
+                          var include1 = jugadas.includes(oGanadora[0].toString());
+                          var include2 = jugadas.includes(oGanadora[1].toString());
+                          var include3 = jugadas.includes(oGanadora[2].toString());
+                          //si contiene los tres, retornara true
+                          if (include1 && include2 && include3){
+                              return true;
+                          }                        
+                       }
+                       //si ha salido del for significa que no hay opcion ganadora y retorna false
+                       return false;
+            }
+            function comprobarJugadas(ref){
+                //obtengo todas las jugadas
+                ref.once("value").then(async function(snapshot) {
+                      //por defecto se guarda como json
+                      var jsonJugadas = snapshot.val();
+                      var arrayJugadas = [];
+                      //cargamos los valores del json en un array
+                      for (var ff in jsonJugadas){
+                          arrayJugadas.push( jsonJugadas[ff]);
+                      }
+                      //separamos las jugadas del jugador X
+                      var jugadasX = arrayJugadas.filter(jg => jg.opcion === "X");
+                      //separamos las jugadas del jugador O
+                      var jugadasO = arrayJugadas.filter(jg => jg.opcion === "O");
+                      //comprobamos si ha ganador el jugador X pasando solo los divid
+                      var haGanadoX = comprobarGanador(jugadasX.map(a => a.divid));
+                      if (haGanadoX){
+                          alert("Ha ganado el jugador X");
+                          alert("Se va a salir");
+                          salir();
+                      }
+                      //comprobamos si ha ganador el jugador O pasando solo los divid
+                      var haGanadoO = comprobarGanador(jugadasO.map(a => a.divid));
+                      if (haGanadoO){
+                          alert("Ha ganado el jugador O");
+                          alert("Se va a salir");
+                          salir();
+                      }
+
+                    });  
+            }
+            db.ref('Jugadas').on('child_added', function(data1){  
+                
+                     
+                    var jugada =  data1.val().divid;
+                    var jugadaid = jugada.toString();
+                    var iddiv = document.getElementById(jugadaid);
+                    iddiv.disabled = true;
+                    var turnojugador = data1.val().turnojugador;
+                    console.log(turnojugador);
+                    turno = turnojugador;
+                    if (nr!==null){
+                        if (turnojugador===2) {
+                                iddiv.innerHTML = "X";
+                        }else{
+                                iddiv.innerHTML = "O";
+                        }
+                        nr++;
+                    }
+                    //compruebo contra firebase si ya hay opcion ganadora al terminar de introducir
+                    //la ultima jugada
+                    comprobarJugadas(db.ref('Jugadas'));
+            });
+
+        </script>
+    </body>
+</html>
